@@ -1,0 +1,6 @@
+# Environment secrets file
+.env
+
+# Ignore pycache
+__pycache__/*
+src/__pycache__/*

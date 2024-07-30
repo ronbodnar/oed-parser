@@ -1,10 +1,6 @@
 # Environment secrets file
 .env
 
-# Ignore script output files.
-parsed-data.txt
-
-*.csv
-
 # Ignore pycache
 __pycache__/*
+src/__pycache__/*

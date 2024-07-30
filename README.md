@@ -1,84 +1,98 @@
-# Oxford English Dictionary Word Parser/Downloader
+<h1 align="center">Oxford English Dictionary ETL Pipeline</h1>
 
-**Oxford English Dictionary Word Parser/Downloader** is a Python-based tool designed to scrape and parse English word data from the Oxford English Dictionary (OED) website. This project provides a robust solution for extracting and managing word-related information, including definitions, snippets, and parts of speech. It’s particularly useful for linguists, language enthusiasts, and developers working with English language datasets.
+<p align="center">
+  A high-throughput Python scraper and data transformation engine for large-scale linguistic datasets.
+</p>
 
-## Table of Contents
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.10+-3776AB" />
+  <img src="https://img.shields.io/badge/Database-MySQL-4479A1" />
+  <img src="https://img.shields.io/badge/Data_Size-439k_Entries-blue" />
+  <img src="https://img.shields.io/badge/Status-Stable-success" />
+</p>
 
-1. [Features](#features)
-2. [Installation](#installation)
-3. [Usage](#usage)
-4. [Contributing](#contributing)
-5. [License](#license)
-6. [Disclaimer](#disclaimer)
+**OED Word Parser** is an end-to-end ETL pipeline designed to extract, normalize, and store the vast lexicon of the Oxford English Dictionary. Beyond simple scraping, this project implements robust error-handling, automated retries for network instability, and a flexible data conversion layer to output web-ready JSON and relational SQL data.
 
-## Features
+<br />
 
-- **Efficient Data Extraction**: Scrape words, snippets (definitions), and parts of speech from OED search pages.
-- **Customizable Delays**: Set a delay between requests (and errors) to avoid server overload.
-- **Recursive Error Handling**: Re-attempts a connection after failure on a customizable delay. 
-- **Flexible Pagination**: Specify starting page and maximum number of pages to parse.
-- **Output Control**: Save parsed data to a specified output file.
+## 🏗️ The ETL Pipeline
 
-## Installation
+The system is architected as a modular three-stage pipeline:
 
-To run the script, you need to have Python 3 and the required packages installed. Follow these steps:
+1. **Extraction (`oed-parser.py`)**: A multi-threaded-capable scraper that navigates the OED search index. It manages state to allow resuming from specific page indices.
+2. **Transformation (`convert-data.py`)**: A normalization engine that cleans "messy" HTML snippets, removes duplicates via dictionary mapping, and formats data into JSON, CSV, or TXT.
+3. **Loading (`load-data-mysql.py`)**: A high-speed database injector utilizing `LOAD DATA LOCAL INFILE` for $O(n)$ performance, significantly faster than standard `INSERT` statements for 400k+ rows.
 
-1. **Clone the Repository:**
+<br />
 
-    ```bash
-    git clone https://github.com/ronbodnar/oed-word-parser.git
-    cd oed-word-parser
-    ```
+## 🧠 Resilience & Error Handling
 
-2. **Install Dependencies:**
+Scraping 400,000+ entries takes time, making the script vulnerable to network timeouts and 502 Bad Gateway errors.
 
-    ```bash
-    pip install -r requirements.txt
-    ```
+- **Backoff Strategy**: Implements a customizable `--error-delay` (default 60s) and `--max-retries` to wait out temporary server bans or IP rate-limits.
+- **Dynamic Exit Logic**: The parser intelligently detects "Empty Result" states to prevent infinite polling.
+- **Quote Sanitization**: Implements a custom delimiter strategy and double-quote escaping to ensure snippets containing complex punctuation don't break the CSV structure.
 
-3. **Set Up the Environment:**
+<br />
 
-    Ensure you have Python 3.6 or higher installed. You may also want to set up a virtual environment.
+## 📊 Data Outputs
 
-## Usage
+The repository includes the result of a full 439,362-word scrape:
 
-Run the script using the following command:
+- **`english-words.json`**: Pretty-printed JSON for easy inspection.
+- **`english-words.min.json`**: Minified version optimized for production web use.
+- **`english-words.csv`**: Database-ready format including Part of Speech and Page indexing.
 
-```bash
-python oed-parser.py --request-delay 2 --max-pages 100 --starting-page 1 --output-file results.txt
-```
+<br />
 
-**Arguments:**
-- `--request-delay` (int, optional): Delay between requests in seconds (default is 1).
-- `--error-delay` (int, optional): Delay between retrying after an error (default is 60).
-- `--max-retries` (int, optional): Maximum number of retries when encountering an error (default: 1).
-- `--max-pages` (int, optional): Maximum number of pages to process (default is infinity).
-- `--starting-page` (int, optional): The page number to start parsing from (default is 1).
-- `--output-file` (string, optional): The path of the output file to write to (default is output.txt).
-- `--delimiter` (string, optional): The delimiter for the output file (default: `,`)
+## 🚦 Getting Started
 
-**Example:**
+### Prerequisites
 
-To start parsing a total of 50 pages, starting from page 1, with a delay of 1 second between requests, and save results to `parsed_data.txt`, use:
+- Python 3.8+
+- MySQL (Optional, for database integration)
+
+### Installation
 
 ```bash
-python oed-word-parser.py --request-delay 1 --max-pages 50 --starting-page 1 --output-file parsed_data.txt
+git clone https://github.com/ronbodnar/oxford-english-dictionary-parser.git
+
+cd oxford-english-dictionary-parser
+
+pip install -r requirements.txt
 ```
 
-## Contributing
+### Execution Example
 
-Contributions are welcome! If you have suggestions for improvements or new features, please follow these steps:
+Extract 100 pages with a safety delay to prevent IP flagging:
 
-1. **Fork the Repository**
-2. **Create a New Branch**: `git checkout -b feature/your-feature`
-3. **Commit Your Changes**: `git commit -am 'Add new feature'`
-4. **Push to the Branch**: `git push origin feature/your-feature`
-5. **Create a Pull Request**
+```bash
+python src/oed-parser.py --request-delay 2 --max-pages 100 --output-file data/output.txt
+```
 
-## License
+Continue extracting from page 100:
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+```bash
+python src/oed-parser.py --request-delay 2 --starting-page 100 --output-file data/output.txt
+```
 
-## Disclaimer
+Convert the results to JSON:
 
-This project is intended for educational purposes and personal use. The script is not affiliated with or endorsed by the Oxford English Dictionary (OED). Users are responsible for ensuring compliance with OED's terms of service and legal restrictions on data usage.
+```bash
+python src/convert-data.py -i data/output.txt -o data/output.json -f json
+```
+
+<br />
+
+## 📫 Connect
+
+**Created by Ron Bodnar**
+
+- LinkedIn: [linkedin.com/in/ronbodnar](https://linkedin.com/in/ronbodnar)
+- Portfolio: [ronbodnar.com](https://ronbodnar.com)
+
+<br />
+
+## ⚖️ License
+
+Distributed under the MIT License. See `LICENSE` for more information.

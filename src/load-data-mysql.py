@@ -1,9 +1,9 @@
 import os
 from dotenv import load_dotenv
 import mysql.connector
-    
+
 # The path to the file containing the data for insertion.
-file = os.path.join(os.path.dirname(__file__), 'out.csv')
+file = os.path.join(os.path.dirname(__file__), '..', 'data', 'english-words.csv')
 
 # Load the environment variables from .env files
 load_dotenv()
@@ -15,7 +15,6 @@ config = {
     'user': os.getenv('DB_USER'),
     'password': os.getenv('DB_PASS'),
     'database': os.getenv('DB_NAME'),
-    'pool_size': 20,
     'allow_local_infile': 1,
 }
 
@@ -31,7 +30,7 @@ if connection and connection.is_connected():
     with connection.cursor() as cursor:
         cursor.execute(
             "LOAD DATA LOCAL INFILE %s " +
-            "INTO TABLE oxford_words " +
+            "INTO TABLE words " +
             "FIELDS TERMINATED BY ',' " +
             "ENCLOSED BY '\"' " +
             "LINES TERMINATED BY '\n' " +
